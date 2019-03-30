@@ -65,6 +65,23 @@
 /* TWI instance. */
 static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_ID);
 
+void twi_init(const nrf_drv_twi_t *l_twi)
+{
+    ret_code_t err_code;
+
+    const nrf_drv_twi_config_t twi_config = {
+        .scl = 27,
+        .sda = 26,
+        .frequency = TWI_DEFAULT_CONFIG_FREQUENCY,
+        .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
+        .clear_bus_init = false};
+
+    err_code = nrf_drv_twi_init(l_twi, &twi_config, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_twi_enable(l_twi);
+}
+
 /* Buffer for samples read from temperature sensor. */
 static uint16_t m_sample;
 
@@ -78,13 +95,14 @@ int main(void)
 
     NRF_LOG_INFO("\r\nTWI BH1750 started.");
     NRF_LOG_FLUSH();
-    bh1750_init(m_twi, BH1750_ADDR_LO);
-    bh1750_setup(m_twi, BH1750_MODE_CONTINIOUS, BH1750_RES_HIGH);
+    twi_init(&m_twi);
+    bh1750_init(&m_twi, BH1750_ADDR_LO);
+    bh1750_setup(BH1750_MODE_CONTINIOUS, BH1750_RES_HIGH);
 
     while (true)
     {
         nrf_delay_ms(2000);
-        bh1750_read(m_twi, &m_sample);
+        bh1750_read(&m_sample);
         NRF_LOG_INFO("Light: %d (lux)", m_sample);
         NRF_LOG_FLUSH();
     }
